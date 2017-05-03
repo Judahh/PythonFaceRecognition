@@ -74,6 +74,9 @@ while True:
         if(confidence < 60):
             if(FoundId == 0):
                 FoundId = "Judah"
+            if(FoundId == 1):
+                FoundId = "Toninho"
+            
         else:
             FoundId = "?"
             # Id = input('enter your id')

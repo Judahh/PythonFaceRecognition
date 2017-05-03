@@ -17,43 +17,13 @@ def select(size, x, y, t, color, name, picture, thickness):
     # cv2.rectangle(picture, (x, y), (x + t, y + t), color, thickness)
     cv2.putText(picture, name, (x, y-5), font, 2, color, thickness, cv2.LINE_AA)
 
-def clearCapture(capture):
-    capture.release()
-    cv2.destroyAllWindows()
-
-def countCameras():
-    videos = []
-    n = 0
-    open = True
-
-    while open:
-        try:
-            cap = cv2.VideoCapture(n)
-            ret, frame = cap.read()
-            cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            clearCapture(cap)
-            n += 1
-        except:
-            clearCapture(cap)
-            open = False
-            break
-    return n
-
-def getCameras():
-    videos=[]
-    cameras = countCameras()
-    print(cameras)
-    for i in range(cameras):
-        videos.append(cv2.VideoCapture(i))
-    return videos
-
 def getLastSampleNumber(path, receivedId):
     imagePaths = [os.path.join(path, f) for f in os.listdir(path)]
     last=0
     #now looping through all the image paths and loading the Ids and the images
     for imagePath in imagePaths:
+        #getting the Id from the image
         if (imagePath!='dataSet/.DS_Store'):
-            #getting the Id from the image
             currentId = int(os.path.split(imagePath)[-1].split(".")[1])
             if(currentId == receivedId):
                 current = int(os.path.split(imagePath)[-1].split(".")[2])
@@ -93,38 +63,29 @@ except:
 cascadePath = "../haarcascade_frontalface_default.xml"
 faceCascade = cv2.CascadeClassifier(cascadePath);
 scale_factor = 1.2
-camera = cv2.VideoCapture(0)
+imagePath = input('picture path: ')
+image = cv2.imread(imagePath)
 font = cv2.FONT_HERSHEY_PLAIN
 
-Id = input('enter your id')
+Id = input('enter your id: ')
 
 sampleNum = getLastSampleNumber('dataSet', int(Id))
 print(sampleNum)
 first = sampleNum
-while (True):
-    ret, image = camera.read()
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    faces = faceCascade.detectMultiScale(gray, scale_factor, 5)
-    for (x, y, w, h) in faces:
-        t = w
-        if h > w:
-            t = h
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+faces = faceCascade.detectMultiScale(gray, scale_factor, 5)
+for (x, y, w, h) in faces:
+    t = w
+    if h > w:
+        t = h
 
-        try:
-            FoundId, confidence = recognizer.predict(gray[y:y + h, x:x + w])
+    try:
+        FoundId, confidence = recognizer.predict(gray[y:y + h, x:x + w])
 
-            if (confidence < 50):
-                if (FoundId == 0):
-                    FoundId = "Judah"
-            else:
-                FoundId = "?"
-                cv2.imwrite("dataSet/User." + Id + '.' + str(sampleNum) + ".jpg", gray[y:y + h, x:x + w])
-                print("New " + "dataSet/User." + Id + '.' + str(sampleNum) + ".jpg")
-                faces, Ids = getImagesAndLabels('dataSet')
-                recognizer.train(faces, np.array(Ids))
-                recognizer.save('trainner/trainner.yml')
-                sampleNum = sampleNum + 1
-        except:
+        if (confidence < 50):
+            if (FoundId == 0):
+                FoundId = "Judah"
+        else:
             FoundId = "?"
             cv2.imwrite("dataSet/User." + Id + '.' + str(sampleNum) + ".jpg", gray[y:y + h, x:x + w])
             print("New " + "dataSet/User." + Id + '.' + str(sampleNum) + ".jpg")
@@ -132,19 +93,18 @@ while (True):
             recognizer.train(faces, np.array(Ids))
             recognizer.save('trainner/trainner.yml')
             sampleNum = sampleNum + 1
+    except:
+        FoundId = "?"
+        cv2.imwrite("dataSet/User." + Id + '.' + str(sampleNum) + ".jpg", gray[y:y + h, x:x + w])
+        print("New " + "dataSet/User." + Id + '.' + str(sampleNum) + ".jpg")
+        faces, Ids = getImagesAndLabels('dataSet')
+        recognizer.train(faces, np.array(Ids))
+        recognizer.save('trainner/trainner.yml')
+        sampleNum = sampleNum + 1
 
-        select(10, x, y, t, (255, 255, 255), Id, image, 1)
+    select(10, x, y, t, (255, 255, 255), Id, image, 1)
 
-        # incrementing sample number
+    # incrementing sample number
 
-        # saving the captured face in the dataset folder
-
-    cv2.imshow('VIDEO', image)
-    # wait for 100 miliseconds
-    if cv2.waitKey(100) & 0xFF == ord('q'):
-        break
-    # break if the sample number is morethan 20
-    elif sampleNum > first + 10:
-        break
-camera.release()
+    # saving the captured face in the dataset folder
 cv2.destroyAllWindows()
